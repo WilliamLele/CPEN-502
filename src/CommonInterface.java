@@ -17,7 +17,7 @@ public interface CommonInterface {
     /**
      *
      * @param X The input vector
-     * @param targetOutput The new value to learn
+     * @param targetOutput The target value to learn
      * @return The error in the output for that input vector
      */
     public double train(double[] X, double targetOutput);
