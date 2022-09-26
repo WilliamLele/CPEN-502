@@ -92,9 +92,9 @@ public class NeuralNet implements NeuralNetInterface{
         double deltaForOutput;
         double[] deltaForHidden = new double[numHidden]; // no need to +1 for bias
 
-        deltaForOutput = (realOutput - targetOutput) * derivativeOfCustomSigmoid(realOutput);
+        deltaForOutput = (targetOutput - realOutput) * derivativeOfCustomSigmoid(realOutput);
         for(int i=0; i<deltaForHidden.length; ++i){
-            deltaForHidden[i] = derivativeOfCustomSigmoid(hiddenValue[i]) * deltaForOutput;
+            deltaForHidden[i] = derivativeOfCustomSigmoid(hiddenValue[i]) * deltaForOutput * weightHiddenToOutput[i+1];
         }
 
         // 3. update current weights & previous weights
@@ -153,7 +153,7 @@ public class NeuralNet implements NeuralNetInterface{
         Random r = new Random();
         //Initialize the weights from inputs to hidden
         for(int i=0; i<weightsInputToHidden.length; ++i){
-            for(int j=0; j<weightsInputToHidden[0].length; ++i){
+            for(int j=0; j<weightsInputToHidden[0].length; ++j){
                 weightsInputToHidden[i][j] = r.nextDouble() * (RANDOM_MAX - RANDOM_MIN) + RANDOM_MIN;
             }
         }
@@ -173,6 +173,55 @@ public class NeuralNet implements NeuralNetInterface{
         }
         //Initialize the weights from hidden to output
         Arrays.fill(weightHiddenToOutput, 0);
+    }
+
+    // getters
+    public int getNumInputs() {
+        return numInputs;
+    }
+
+    public int getNumHidden() {
+        return numHidden;
+    }
+
+    public double getRho() {
+        return rho;
+    }
+
+    public double getAlpha() {
+        return alpha;
+    }
+
+    public double getMinQ() {
+        return minQ;
+    }
+
+    public double getMaxQ() {
+        return maxQ;
+    }
+
+    public double[] getHiddenValue() {
+        return hiddenValue;
+    }
+
+    public double[][] getWeightsInputToHidden() {
+        return weightsInputToHidden;
+    }
+
+    public double[] getWeightHiddenToOutput() {
+        return weightHiddenToOutput;
+    }
+
+    public double[][] getPreviousWeightsInputToHidden() {
+        return previousWeightsInputToHidden;
+    }
+
+    public double[] getPreviousWeightHiddenToOutput() {
+        return previousWeightHiddenToOutput;
+    }
+
+    public boolean isBipolar() {
+        return bipolar;
     }
 
 //    /**
