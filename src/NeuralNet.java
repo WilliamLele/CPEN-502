@@ -112,6 +112,7 @@ public class NeuralNet implements NeuralNetInterface{
             double prev = previousWeightHiddenToOutput[i];
             double x = (i == 0) ? BIAS_INPUT : hiddenValue[i-1];
             weightHiddenToOutput[i] += alpha * (curr - prev) + rho * deltaForOutput * x;
+            previousWeightHiddenToOutput[i] = curr;
         }
         // return the error of current input
         return 0.5 * (realOutput - targetOutput) * (realOutput - targetOutput);
