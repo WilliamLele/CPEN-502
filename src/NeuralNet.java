@@ -77,7 +77,7 @@ public class NeuralNet implements NeuralNetInterface{
         // hidden to output
         double sumHiddenToOutput = weightHiddenToOutput[0] * BIAS_INPUT;
         for(int i=1; i<weightHiddenToOutput.length; ++i){
-                sumHiddenToOutput += weightHiddenToOutput[i] + hiddenValue[i-1];
+                sumHiddenToOutput += weightHiddenToOutput[i] * hiddenValue[i-1];
         }
 
         return customSigmoid(sumHiddenToOutput);
