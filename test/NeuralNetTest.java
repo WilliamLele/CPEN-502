@@ -51,6 +51,11 @@ public class NeuralNetTest {
     }
 
     @Test
+    public void derivativeOfCustomSigmoid(){
+        assertEquals(0.21, nn.derivativeOfCustomSigmoid(0.3), DELTA);
+    }
+
+    @Test
     public void initializeWeights() {
         nn.initializeWeights();
         double[][] weightsInputToHidden = nn.getWeightsInputToHidden();
