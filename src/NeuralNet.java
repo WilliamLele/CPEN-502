@@ -84,7 +84,15 @@ public class NeuralNet implements NeuralNetInterface{
     }
 
     @Override
-    public double train(double[] X, double targetOutput) {
+    public double train(double[] X, double targetOutput){
+        if(bipolar){
+            return trainBipolar(X, targetOutput);
+        }
+        return trainBinary(X, targetOutput);
+    }
+
+
+    public double trainBinary(double[] X, double targetOutput) {
         // for each pattern of an epoch
         // 1. forward
         double realOutput = outputFor(X);
@@ -98,6 +106,42 @@ public class NeuralNet implements NeuralNetInterface{
         }
 
         // 3. update current weights & previous weights
+        updateWeightsInputToHidden(X, deltaForHidden);
+        updateWeightsHiddenToOutput(deltaForOutput);
+        // return the error of current input
+        return 0.5 * (realOutput - targetOutput) * (realOutput - targetOutput);
+    }
+
+    public double trainBipolar(double[] X, double targetOutput){
+        // for each pattern of an epoch
+        // 1. forward
+        double realOutput = outputFor(X);
+        // 2. backward: calculate error signal for each neuron
+        // 3. update current weights & previous weights
+        double deltaForOutput;
+        double[] deltaForHidden = new double[numHidden]; // no need to +1 for bias
+
+        deltaForOutput = (targetOutput - realOutput) * derivativeOfCustomSigmoid(realOutput);
+        updateWeightsHiddenToOutput(deltaForOutput);
+        for(int i=0; i<deltaForHidden.length; ++i){
+            deltaForHidden[i] = derivativeOfCustomSigmoid(hiddenValue[i]) * deltaForOutput * weightHiddenToOutput[i+1];
+        }
+        updateWeightsInputToHidden(X, deltaForHidden);
+        // return the error of current input
+        return 0.5 * (realOutput - targetOutput) * (realOutput - targetOutput);
+    }
+
+    private void updateWeightsHiddenToOutput(double deltaForOutput) {
+        for(int i=0; i<weightHiddenToOutput.length; ++i){
+            double curr = weightHiddenToOutput[i];
+            double prev = previousWeightHiddenToOutput[i];
+            double x = (i == 0) ? BIAS_INPUT : hiddenValue[i-1];
+            weightHiddenToOutput[i] += alpha * (curr - prev) + rho * deltaForOutput * x;
+            previousWeightHiddenToOutput[i] = curr;
+        }
+    }
+
+    private void updateWeightsInputToHidden(double[] X, double[] deltaForHidden) {
         for(int i=0; i<weightsInputToHidden.length; ++i){
             for(int j=0; j<weightsInputToHidden[0].length; ++j){
                 double curr = weightsInputToHidden[i][j];
@@ -107,15 +151,6 @@ public class NeuralNet implements NeuralNetInterface{
                 previousWeightsInputToHidden[i][j] = curr;
             }
         }
-        for(int i=0; i<weightHiddenToOutput.length; ++i){
-            double curr = weightHiddenToOutput[i];
-            double prev = previousWeightHiddenToOutput[i];
-            double x = (i == 0) ? BIAS_INPUT : hiddenValue[i-1];
-            weightHiddenToOutput[i] += alpha * (curr - prev) + rho * deltaForOutput * x;
-            previousWeightHiddenToOutput[i] = curr;
-        }
-        // return the error of current input
-        return 0.5 * (realOutput - targetOutput) * (realOutput - targetOutput);
     }
 
     @Override
@@ -224,37 +259,4 @@ public class NeuralNet implements NeuralNetInterface{
     public boolean isBipolar() {
         return bipolar;
     }
-
-//    /**
-//     * Performs a forward propagation.
-//     * That is, computes weighted sums Si and activations yi for all cells
-//     * @param X
-//     * @return The output for the input vector
-//     */
-//    private double forward(double[] X){
-//        // return outputFor(X);
-//        return 0;
-//    }
-//
-//    /**
-//     * Performs a backword propagation
-//     * That is, computes error signal \delta for each neuron
-//     * @param X The input vector
-//     * @param targetOutput The target output
-//     */
-//    public void backward(double[] X, double targetOutput){
-//
-//    }
-//
-//    /**
-//     * Updates weights with momentum
-//     */
-//    public void updateWeights(){
-//
-//    }
-//
-//    private double calculateError(double realOutput, double targetOutput){
-//        // return E = sum((yi-Ci)^2)/2
-//        return 0.5 * (realOutput - targetOutput) * (realOutput - targetOutput);
-//    }
 }
