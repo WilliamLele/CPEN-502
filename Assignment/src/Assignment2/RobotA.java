@@ -31,7 +31,8 @@ public class RobotA extends AdvancedRobot {
     public double distanceToEnemy = 0.0;
     public double enemyEnergy = 100;
 
-    public double reward = 0.0;
+    public double previousReward = 0.0; //r
+    public double currentReward = 0.0; //r t+1
 
     public static boolean immediateReward = true;
     public static boolean onPolicy = true;
@@ -56,38 +57,110 @@ public class RobotA extends AdvancedRobot {
         }
     }
 
+    public double Qvalue(){
+        double Q = 0.0;
+        double previousQ; //Q(s, a)
+        double currentQ;  //Q(s', a')
+        int[] tempPrevious = {
+                previousState.myX.ordinal(),
+                previousState.myY.ordinal(),
+                previousState.myEnergy.ordinal(),
+                previousState.distanceToEnemy.ordinal(),
+                previousState.enemyEnergy.ordinal(),
+                previousState.action.ordinal()
+        };
+        previousQ = lut.outputFor(tempPrevious);
+
+        int[] tempCurrent = {
+                currentState.myX.ordinal(),
+                currentState.myY.ordinal(),
+                currentState.myEnergy.ordinal(),
+                currentState.distanceToEnemy.ordinal(),
+                currentState.enemyEnergy.ordinal(),
+                currentState.action.ordinal()
+        };
+        currentQ = lut.outputFor(tempCurrent);
+
+        //Sarsa (on-policy)
+        if(onPolicy){
+            Q = previousQ + alpha * (previousReward + gamma * currentQ - previousQ);
+        }
+        //Q-learning (off-policy)
+        else{
+            //Greedy algorithm
+            int index = lut.greedy(
+                    currentState.myX.ordinal(), currentState.myY.ordinal(),
+                    currentState.myEnergy.ordinal(), currentState.distanceToEnemy.ordinal(),
+                    currentState.enemyEnergy.ordinal()
+            );
+            int[] inputVector = {
+                    currentState.myX.ordinal(),
+                    currentState.myY.ordinal(),
+                    currentState.myEnergy.ordinal(),
+                    currentState.distanceToEnemy.ordinal(),
+                    currentState.enemyEnergy.ordinal(),
+                    index
+            };
+            double max = lut.outputFor(inputVector);
+            Q = previousQ + alpha * (currentReward + gamma * max - previousQ);
+        }
+        return Q;
+    }
+
     public void onScannedRobot(ScannedRobotEvent e){
         fire(1);
     }
 
     //This method will be called when one of your bullets hits another robot
     public void onBulletHit(BulletHitEvent e){
-        if(immediateReward)
-            reward += immediateBonus;
+        if(immediateReward) {
+            if (currentReward != previousReward) {
+                previousReward = currentReward;
+            }
+            currentReward += immediateBonus;
+        }
     }
 
     //This method will be called when your robots is hit by a bullet
     public void onHitByBullet(HitByBulletEvent e){
-        if(immediateReward)
-            reward += immediatePenalty;
+        if(immediateReward) {
+            if (currentReward != previousReward) {
+                previousReward = currentReward;
+            }
+            currentReward += immediateBonus;
+        }
     }
 
     //This method will be called when one of your bullets misses (hits a wall)
     public void onBulletMissed(BulletMissedEvent e){
-        if(immediateReward)
-            reward += immediatePenalty;
+        if(immediateReward) {
+            if (currentReward != previousReward) {
+                previousReward = currentReward;
+            }
+            currentReward += immediateBonus;
+        }
     }
 
     //This method will be called if the robot wins a battle
     public void onWin(WinEvent e){
-        reward = terminalBonus;
+        if(immediateReward) {
+            if (currentReward != previousReward) {
+                previousReward = currentReward;
+            }
+            currentReward = terminalBonus;
+        }
         totalRounds++;
         winRounds++;
     }
 
     //This method will be called if the robot dies
     public void onDeath(DeathEvent e){
-        reward = terminalPenalty;
+        if(immediateReward) {
+            if (currentReward != previousReward) {
+                previousReward = currentReward;
+            }
+            currentReward += terminalPenalty;
+        }
         totalRounds++;
     }
 }

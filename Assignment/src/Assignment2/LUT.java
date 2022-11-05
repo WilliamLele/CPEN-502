@@ -69,9 +69,9 @@ public class LUT implements LUTInterface {
         return actionIndex;
     }
 
-
-    public double outputFor(double[] X) {
-        return 0;
+    //Return the Q value based on state index array x
+    public double outputFor(int[] x) {
+        return lookUpTable[x[0]][x[1]][x[2]][x[3]][x[4]][x[5]];
     }
 
     //Update LUT
