@@ -1,6 +1,6 @@
 package Assignment2;
 
-import robocode.AdvancedRobot;
+import robocode.*;
 import robocode.ScannedRobotEvent;
 
 public class RobotA extends AdvancedRobot {
@@ -31,13 +31,14 @@ public class RobotA extends AdvancedRobot {
     public double distanceToEnemy = 0.0;
     public double enemyEnergy = 100;
 
+    public double reward = 0.0;
+
     public static boolean immediateReward = true;
     public static boolean onPolicy = true;
 
     private double gamma = 0.0; //discount factor
     private double alpha = 0.0; //learning rate
     private double epsilon = 0.0; //random number for the next move
-    private double reward = 0.0;
     private double qValue = 0.0;
 
     //static LUT
@@ -54,9 +55,39 @@ public class RobotA extends AdvancedRobot {
             turnGunLeft(360);
         }
     }
+
     public void onScannedRobot(ScannedRobotEvent e){
-
         fire(1);
+    }
 
+    //This method will be called when one of your bullets hits another robot
+    public void onBulletHit(BulletHitEvent e){
+        if(immediateReward)
+            reward += immediateBonus;
+    }
+
+    //This method will be called when your robots is hit by a bullet
+    public void onHitByBullet(HitByBulletEvent e){
+        if(immediateReward)
+            reward += immediatePenalty;
+    }
+
+    //This method will be called when one of your bullets misses (hits a wall)
+    public void onBulletMissed(BulletMissedEvent e){
+        if(immediateReward)
+            reward += immediatePenalty;
+    }
+
+    //This method will be called if the robot wins a battle
+    public void onWin(WinEvent e){
+        reward = terminalBonus;
+        totalRounds++;
+        winRounds++;
+    }
+
+    //This method will be called if the robot dies
+    public void onDeath(DeathEvent e){
+        reward = terminalPenalty;
+        totalRounds++;
     }
 }
