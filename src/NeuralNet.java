@@ -73,6 +73,7 @@ public class NeuralNet implements NeuralNetInterface{
                     sumInputToHidden += weightsInputToHidden[i][j] * X[j-1];
             }
             hiddenValue[i] = customSigmoid(sumInputToHidden);
+//            hiddenValue[i] = bipolarSigmoid(sumInputToHidden);
         }
         // hidden to output
         double sumHiddenToOutput = weightHiddenToOutput[0] * BIAS_INPUT;
@@ -81,6 +82,7 @@ public class NeuralNet implements NeuralNetInterface{
         }
 
         return customSigmoid(sumHiddenToOutput);
+//        return binarySigmoid(sumHiddenToOutput);
     }
 
     @Override
@@ -101,8 +103,10 @@ public class NeuralNet implements NeuralNetInterface{
         double[] deltaForHidden = new double[numHidden]; // no need to +1 for bias
 
         deltaForOutput = (targetOutput - realOutput) * derivativeOfCustomSigmoid(realOutput);
+//        deltaForOutput = (targetOutput - realOutput) * derivativeOfBinarySigmoid(realOutput);
         for(int i=0; i<deltaForHidden.length; ++i){
             deltaForHidden[i] = derivativeOfCustomSigmoid(hiddenValue[i]) * deltaForOutput * weightHiddenToOutput[i+1];
+//            deltaForHidden[i] = derivativeOfBipolarSigmoid(hiddenValue[i]) * deltaForOutput * weightHiddenToOutput[i+1];
         }
 
         // 3. update current weights & previous weights
@@ -183,6 +187,14 @@ public class NeuralNet implements NeuralNetInterface{
         return (f - minQ) * ((maxQ - f) / (maxQ - minQ));
     }
 
+//    public double derivativeOfBinarySigmoid(double f){
+//        return f * (1 - f);
+//    }
+//
+//    public double derivativeOfBipolarSigmoid(double f){
+//        return (f + 1) * ((1-f) / 2);
+//    }
+
     @Override
     public void initializeWeights() {
         // initialize weights to random values in [RANDOM_MIN, RANDOM_MAX)
@@ -191,11 +203,13 @@ public class NeuralNet implements NeuralNetInterface{
         for(int i=0; i<weightsInputToHidden.length; ++i){
             for(int j=0; j<weightsInputToHidden[0].length; ++j){
                 weightsInputToHidden[i][j] = r.nextDouble() * (RANDOM_MAX - RANDOM_MIN) + RANDOM_MIN;
+                previousWeightsInputToHidden[i][j] = weightsInputToHidden[i][j];
             }
         }
         //Initialize the weights from hidden to output
         for(int i=0; i<weightHiddenToOutput.length; ++i){
             weightHiddenToOutput[i] = r.nextDouble() * (RANDOM_MAX - RANDOM_MIN) + RANDOM_MIN;
+            previousWeightHiddenToOutput[i] = weightHiddenToOutput[i];
         }
 
 
