@@ -1,3 +1,7 @@
+package Assignment1;
+
+import Interface.NeuralNetInterface;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
@@ -8,7 +12,7 @@ import java.util.Random;
  * @author: Hongjing
  * @date: 2022.09.23
  */
-public class NeuralNet implements NeuralNetInterface{
+public class NeuralNet implements NeuralNetInterface {
 
     static final double RANDOM_MIN = -0.5;
     static final double RANDOM_MAX = 0.5;
@@ -68,7 +72,7 @@ public class NeuralNet implements NeuralNetInterface{
     public double outputFor(double[] X) {
         // input to hidden
         for(int i=0; i<weightsInputToHidden.length; ++i){
-            double sumInputToHidden = weightsInputToHidden[i][0] * BIAS_INPUT;
+            double sumInputToHidden = weightsInputToHidden[i][0] * NeuralNetInterface.BIAS_INPUT;
             for(int j=1; j<weightsInputToHidden[0].length; ++j){
                     sumInputToHidden += weightsInputToHidden[i][j] * X[j-1];
             }
@@ -76,7 +80,7 @@ public class NeuralNet implements NeuralNetInterface{
 //            hiddenValue[i] = bipolarSigmoid(sumInputToHidden);
         }
         // hidden to output
-        double sumHiddenToOutput = weightHiddenToOutput[0] * BIAS_INPUT;
+        double sumHiddenToOutput = weightHiddenToOutput[0] * NeuralNetInterface.BIAS_INPUT;
         for(int i=1; i<weightHiddenToOutput.length; ++i){
                 sumHiddenToOutput += weightHiddenToOutput[i] * hiddenValue[i-1];
         }
@@ -139,7 +143,7 @@ public class NeuralNet implements NeuralNetInterface{
         for(int i=0; i<weightHiddenToOutput.length; ++i){
             double curr = weightHiddenToOutput[i];
             double prev = previousWeightHiddenToOutput[i];
-            double x = (i == 0) ? BIAS_INPUT : hiddenValue[i-1];
+            double x = (i == 0) ? NeuralNetInterface.BIAS_INPUT : hiddenValue[i-1];
             weightHiddenToOutput[i] += alpha * (curr - prev) + rho * deltaForOutput * x;
             previousWeightHiddenToOutput[i] = curr;
         }
@@ -150,7 +154,7 @@ public class NeuralNet implements NeuralNetInterface{
             for(int j=0; j<weightsInputToHidden[0].length; ++j){
                 double curr = weightsInputToHidden[i][j];
                 double prev = previousWeightsInputToHidden[i][j];
-                double x = (j == 0) ? BIAS_INPUT : X[j-1];
+                double x = (j == 0) ? NeuralNetInterface.BIAS_INPUT : X[j-1];
                 weightsInputToHidden[i][j] += alpha * (curr - prev) + rho * deltaForHidden[i] * x;
                 previousWeightsInputToHidden[i][j] = curr;
             }
