@@ -1,4 +1,4 @@
-package Interface;
+package ece.cpen502.Interface;
 
 /**
  * @Description:

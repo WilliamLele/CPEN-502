@@ -1,4 +1,4 @@
-package Interface;
+package ece.cpen502.Interface;
 
 import java.io.File;
 import java.io.IOException;
@@ -28,7 +28,7 @@ public interface CommonInterface {
      * To write weights of a neural net to a file
      * @param argFile
      */
-    public void save(File argFile);
+    public void save(File argFile) throws IOException;
 
     /**
      * Loads the neural net weights from file.

@@ -1,6 +1,6 @@
-package Assignment1;
+package ece.cpen502.Assignment1;
 
-import Interface.NeuralNetInterface;
+import ece.cpen502.Interface.NeuralNetInterface;
 
 import java.io.File;
 import java.io.IOException;
@@ -14,8 +14,8 @@ import java.util.Random;
  */
 public class NeuralNet implements NeuralNetInterface {
 
-    static final double RANDOM_MIN = -0.5;
-    static final double RANDOM_MAX = 0.5;
+    public static final double RANDOM_MIN = -0.5;
+    public static final double RANDOM_MAX = 0.5;
 
     private int numInputs;
     private int numHidden;

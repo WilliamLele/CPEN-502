@@ -1,4 +1,4 @@
-import Assignment1.NeuralNet;
+import ece.cpen502.Assignment1.NeuralNet;
 import org.junit.Before;
 import org.junit.Test;
 
