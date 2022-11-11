@@ -8,9 +8,15 @@ public class MicroRobot extends AdvancedRobot {
 
     public enum Operation {SCAN, PERFORM_ACTION};
 
+    public static double terminalReward = 1.0;
+    public static int targetNumRound = 8000;
+
     // Total rounds, win rounds and win percentage
     public static int totalRounds = 0;
+    public static int countRounds = 0;
     public static int winRounds = 0;
+    public static int roundsToCount = 100;
+    public static double totalRewardsPerCount = 0;
 
     // Initialize the current and previous state
     private State currentState = new State();
@@ -18,18 +24,20 @@ public class MicroRobot extends AdvancedRobot {
     private State previousState = new State();
     private State.Action previousAction = previousState.action;
 
+    private double enemyBearing = 0;
+
     private Operation operationMode = Operation.SCAN;
 
     private double currentReward;
 
-    private double gamma = 0.3;
-    private double alpha = 0.3;
-    private double epsilon_inital = 0.8;
-    private double epsilon = 0.8;
+    private double gamma = 0.9;
+    private double alpha = 0.9;
+    private double epsilon_initial = 0.9;
+    private double epsilon = 0.9;
 
     public static boolean immediateReward = true;
-    public static boolean onPolicy = true;
-    public static boolean decayEpsilon = true;
+    public static boolean onPolicy = false;
+    public static boolean decayEpsilon = false;
 
     public static LUT lut = new LUT(
             State.XPOS_NUM, State.YPOS_NUM,
@@ -38,19 +46,18 @@ public class MicroRobot extends AdvancedRobot {
     );
 
     public void run(){
-
-        // Todo:anything need to initialize?
         ++totalRounds;
+        ++countRounds;
         if(decayEpsilon && epsilon > 0){
-            if(totalRounds <= 5000){
-                epsilon = epsilon_inital * (1 - totalRounds * 1.0 / 5000);
+            if(totalRounds <= targetNumRound){
+                epsilon = epsilon_initial * (1 - totalRounds * 1.0 / targetNumRound);
             }
             else{
                 epsilon = 0;
             }
         }
         else{
-            if(totalRounds > 100000){
+            if(totalRounds > targetNumRound){
                 epsilon = 0;
             }
         }
@@ -82,8 +89,7 @@ public class MicroRobot extends AdvancedRobot {
                             break;
                         }
                         case down:{
-                            setTurnLeft(180);
-                            setAhead(100);
+                            setBack(100);
                             execute();
                             break;
                         }
@@ -100,6 +106,7 @@ public class MicroRobot extends AdvancedRobot {
                             break;
                         }
                         case fire:{
+                            setTurnGunRight(getHeading() - getGunHeading() + enemyBearing);
                             fire(3);
                             execute();
                             break;
@@ -193,6 +200,7 @@ public class MicroRobot extends AdvancedRobot {
             };
         }
         double currentQ = lut.outputFor(currentX);
+        totalRewardsPerCount += currentReward;
         return priorQ + alpha * (currentReward + gamma * currentQ - priorQ);
     }
 
@@ -212,6 +220,7 @@ public class MicroRobot extends AdvancedRobot {
         currentState.myEnergy = State.getEnergyLevel(getEnergy());
         currentState.distanceToEnemy = State.getDistanceLevel(e.getDistance());
         currentState.enemyEnergy = State.getEnergyLevel(e.getEnergy());
+        enemyBearing = e.getBearing();
 
         // switch operation mode
         operationMode = Operation.PERFORM_ACTION;
@@ -220,7 +229,7 @@ public class MicroRobot extends AdvancedRobot {
     @Override
     public void onWin(WinEvent e) {
         ++winRounds;
-        currentReward = 1;
+        currentReward = terminalReward;
         // update Q
         double[] x = new double[]{
                 previousState.myX.ordinal(),
@@ -231,25 +240,33 @@ public class MicroRobot extends AdvancedRobot {
                 previousAction.ordinal()
         };
         lut.train(x, computeQ(previousState, currentState, currentReward));
+
+        // statistics
+        if(countRounds == roundsToCount){
+            System.out.println(totalRounds/roundsToCount + " win rate: " + winRounds/roundsToCount + " per "+roundsToCount + ", total rewards: "+ totalRewardsPerCount);
+            countRounds = 0;
+            winRounds = 0;
+            totalRewardsPerCount = 0;
+        }
     }
 
     @Override
     public void onBulletHit(BulletHitEvent e) {
         if(immediateReward){
-            currentReward = 0.5;
+            currentReward = terminalReward/4;
         }
     }
 
     @Override
     public void onHitByBullet(HitByBulletEvent e) {
         if(immediateReward){
-            currentReward = 0.5;
+            currentReward = -terminalReward/4;
         }
     }
 
     @Override
     public void onDeath(DeathEvent e) {
-        currentReward = -1;
+        currentReward = -terminalReward;
 
         // update Q
         double[] x = new double[]{
@@ -261,5 +278,28 @@ public class MicroRobot extends AdvancedRobot {
                 previousAction.ordinal()
         };
         lut.train(x, computeQ(previousState, currentState, currentReward));
+
+        // statistics
+        if(countRounds == roundsToCount){
+            System.out.println(totalRounds/roundsToCount + " win rate: " + winRounds/roundsToCount + " per "+roundsToCount + ", total rewards: "+ totalRewardsPerCount);
+            countRounds = 0;
+            winRounds = 0;
+            totalRewardsPerCount = 0;
+        }
     }
+
+    @Override
+    public void onBulletMissed(BulletMissedEvent event) {
+        if(immediateReward){
+            currentReward = -terminalReward/4;
+        }
+    }
+
+    @Override
+    public void onHitWall(HitWallEvent event) {
+        if(immediateReward){
+            currentReward = -terminalReward/4;
+        }
+    }
+
 }
