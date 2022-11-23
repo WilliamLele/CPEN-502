@@ -70,13 +70,39 @@ public class LUT implements LUTInterface {
     }
 
     //Return the Q value based on state index array x
-    public double outputFor(int[] x) {
-        return lookUpTable[x[0]][x[1]][x[2]][x[3]][x[4]][x[5]];
+    @Override
+    public double outputFor(double[] X) {
+        if(X.length != 6){
+            throw new ArrayIndexOutOfBoundsException();
+        }
+        else {
+            int a = (int)X[0];
+            int b = (int)X[1];
+            int c = (int)X[2];
+            int d = (int)X[3];
+            int e = (int)X[4];
+            int f = (int)X[5];
+            return lookUpTable[a][b][c][d][e][f];
+        }
     }
 
     //Update LUT
-    public void train(int[] inputVector, double targetOutput){
-        lookUpTable[inputVector[0]][inputVector[1]][inputVector[2]][inputVector[3]][inputVector[4]][inputVector[5]] = targetOutput;
+    @Override
+    public double train(double[] X, double targetOutput) {
+        if(X.length != 6){
+            throw new ArrayIndexOutOfBoundsException();
+        }
+        else {
+            int a = (int)X[0];
+            int b = (int)X[1];
+            int c = (int)X[2];
+            int d = (int)X[3];
+            int e = (int)X[4];
+            int f = (int)X[5];
+            lookUpTable[a][b][c][d][e][f] = targetOutput;
+            ++visits[a][b][c][d][e][f];
+        }
+        return 0;
     }
 
 

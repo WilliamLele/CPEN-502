@@ -21,6 +21,15 @@ public class State {
     public energy enemyEnergy;
     public Action action;
 
+    public State(){
+        myX = xPos.left;
+        myY = yPos.top;
+        myEnergy = energy.high;
+        distanceToEnemy = distance.medium;
+        enemyEnergy = energy.high;
+        action = Action.down;
+    }
+
     public State(xPos x, yPos y, energy e1, distance d, energy e2, Action a){
         myX = x;
         myY = y;
@@ -31,7 +40,7 @@ public class State {
     }
 
     //Define xPos
-    public xPos getxPosLevel(double x){
+    public static xPos getXPosLevel(double x){
         if(x <= 300){
             return xPos.left;
         }
@@ -44,7 +53,7 @@ public class State {
     }
 
     //Define yPos
-    public yPos getyPosLevel(double y){
+    public static yPos getYPosLevel(double y){
         if(y <= 200){
             return yPos.bottom;
         }
@@ -57,7 +66,7 @@ public class State {
     }
 
     //Define mEnergy
-    public energy getEnergyLevel(double e){
+    public static energy getEnergyLevel(double e){
         if(e <= 33){
             return energy.low;
         }
@@ -70,7 +79,7 @@ public class State {
     }
 
     //Define distance to enemy
-    public distance getDistanceLevel(double d){
+    public static distance getDistanceLevel(double d){
         if(d <= 350){
             return distance.close;
         }
