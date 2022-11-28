@@ -1,5 +1,5 @@
 package Assignment2;
-
+ 
 import Interface.LUTInterface;
 
 import java.io.File;
