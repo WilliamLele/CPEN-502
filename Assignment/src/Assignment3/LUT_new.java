@@ -3,7 +3,6 @@ package Assignment3;
  * This LUT_new class maps {states, action} to Q-value
  * Total number of entries in LUT = 3 x 3 x 3 x 3 x 3 x 5 = 1215
  */
-
 import Interface.CommonInterface;
 import Interface.LUTInterface;
 import java.io.*;
