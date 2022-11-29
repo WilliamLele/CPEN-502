@@ -129,4 +129,21 @@ public class LUT implements LUTInterface {
             return visits[a][b][c][d][e][f];
         }
     }
+
+    public void print(){
+        for(int a = 0; a < myXSize; a++){
+            for(int b = 0; b < myYSize; b++){
+                for(int c = 0; c < myEnergySize; c++){
+                    for(int d = 0; d < distanceToEnemySize; d++){
+                        for(int e = 0; e < enemyEnergySize; e++){
+                            for(int f = 0; f < actionSize; f++){
+                                System.out.printf("+++{%d, %d, %d, %d, %d, %d} = %2.3f, visits %d\n",
+                                        a,b,c,d,e,f, lookUpTable[a][b][c][d][e][f], visits[a][b][c][d][e][f]);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
