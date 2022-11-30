@@ -24,7 +24,7 @@ public class LutTrainNN {
 
     //Constuctor
     public LutTrainNN(double learningRate, double momentum, int numHidden){
-        lutNN = new NeuralNet(trainingInput.length, numHidden, learningRate, momentum, -1, 1, true);
+        lutNN = new NeuralNet(trainingInput[0].length, numHidden, learningRate, momentum, -1, 1, true);
         lutNN.initializeWeights();
     }
 
@@ -49,7 +49,7 @@ public class LutTrainNN {
             e.printStackTrace();
         }
 
-        //trainer.run();
+        trainer.run();
     }
 
     /**
@@ -66,7 +66,7 @@ public class LutTrainNN {
             for (int i = 0; i < trainingInput.length; i++) {
                 String splitLine[] = line.split("\t");           //lut.txt format:    000000 tab 0.0 tab 0
                 int visitCount = Integer.parseInt(splitLine[2]); //If visits in lut.txt is 0, then it will not be used to train
-                if (visitCount > 0) {
+                //if (visitCount > 0) {
                     oneHotEncoding(row, 0, Double.parseDouble(splitLine[0].substring(0, 1)));
                     oneHotEncoding(row, 1, Double.parseDouble(splitLine[0].substring(1, 2)));
                     oneHotEncoding(row, 2, Double.parseDouble(splitLine[0].substring(2, 3)));
@@ -77,7 +77,7 @@ public class LutTrainNN {
                     trainingOutput[row] = Double.parseDouble(splitLine[1]);
 
                     row++;
-                }
+                //}
                 line = reader.readLine();
             }
             //Normalize/rescale the Q-value to {-1, 1}
@@ -92,12 +92,14 @@ public class LutTrainNN {
         /**
          * Debug
          */
-        for(int i=0; i<1215; i++) {
+        /*for(int i=0; i<1215; i++) {
             for(int j=0; j<20; j++) {
                 System.out.print(trainingInput[i][j] + " ");
             }
             System.out.println("  Qvalue:"+trainingOutput[i]);
         }
+        System.out.println("LENGTH: "+trainingInput[0].length);
+         */
     }
 
     public void run(){
@@ -109,12 +111,12 @@ public class LutTrainNN {
             // (1) reach the number of epochs we want (2) total error is acceptable
             totalError = 0;
             // inner loop: train the training set once
-            for (int i = 0; i < trainingOutput.length; ++i) {
+            for (int i = 0; i < trainingOutput.length; i++) {
                 double error = lutNN.train(trainingInput[i], trainingOutput[i]);
-                totalError += error;
+                totalError += error * 2; //Since previously we calculate the total error, now is RMSError
                 RMSError = Math.sqrt(totalError/trainingOutput.length);
             }
-            System.out.println("The total error of " + totalError + "RMSError " + RMSError + " epoch: " + ++epoch);
+            System.out.println("The total error of " + totalError + " RMSError " + RMSError + " epoch: " + ++epoch);
             dataList.add(new String[]{Double.toString(totalError), Double.toString(RMSError), Integer.toString(epoch)});
             writeCsvFile("../Assignment 3", dataList);
         }
