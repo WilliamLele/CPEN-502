@@ -47,6 +47,7 @@ public class RobotNN extends AdvancedRobot {
     public static boolean immediateReward = true;
     public static boolean onPolicy = false;
     public static boolean decayEpsilon = false;
+    public static boolean replayMemoryMode = true;
 
 
     public static int memorySize = 10;
@@ -147,8 +148,10 @@ public class RobotNN extends AdvancedRobot {
                     // todo
                     double[] xScaledOneHotEncoded = scaleVector(oneHotEncodingFor(x));
                     nn.train(xScaledOneHotEncoded, computeQ(previousState, currentState, currentReward));
-                    replayMemory.add(new Experience(previousState, previousAction, currentReward, currentState));
-                    replayExperience();
+                    if(replayMemoryMode){
+                        replayMemory.add(new Experience(previousState, previousAction, currentReward, currentState));
+                        replayExperience();
+                    }
                     // switch operation mode
                     operationMode = Operation.SCAN;
                     break;
@@ -316,8 +319,10 @@ public class RobotNN extends AdvancedRobot {
         // todo
         double[] xScaledOneHotEncoded = scaleVector(oneHotEncodingFor(x));
         nn.train(xScaledOneHotEncoded, computeQ(previousState, currentState, currentReward));
-        replayMemory.add(new Experience(previousState, previousAction, currentReward, currentState));
-        replayExperience();
+        if(replayMemoryMode){
+            replayMemory.add(new Experience(previousState, previousAction, currentReward, currentState));
+            replayExperience();
+        }
         // statistics
         if(countRounds == roundsToCount){
             System.out.println(totalRounds/roundsToCount + " win rate: " + (float)winRounds/roundsToCount + " per "+roundsToCount + ", total rewards: "+ totalRewardsPerCount);
@@ -357,8 +362,10 @@ public class RobotNN extends AdvancedRobot {
         // todo
         double[] xScaledOneHotEncoded = scaleVector(oneHotEncodingFor(x));
         nn.train(xScaledOneHotEncoded, computeQ(previousState, currentState, currentReward));
-        replayMemory.add(new Experience(previousState, previousAction, currentReward, currentState));
-
+        if(replayMemoryMode){
+            replayMemory.add(new Experience(previousState, previousAction, currentReward, currentState));
+            replayExperience();
+        }
         // statistics
         if(countRounds == roundsToCount){
             System.out.println(totalRounds/roundsToCount + " win rate: " + (float)winRounds/roundsToCount + " per "+roundsToCount + ", total rewards: "+ totalRewardsPerCount);
