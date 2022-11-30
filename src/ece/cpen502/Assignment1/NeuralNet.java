@@ -167,7 +167,7 @@ public class NeuralNet implements NeuralNetInterface {
     }
 
     @Override
-    public void load(String argFileName) throws IOException {
+    public void load(File argFileName) throws IOException {
 
     }
 

@@ -37,5 +37,5 @@ public interface CommonInterface {
      * @param argFileName
      * @throws IOException
      */
-    public void load(String argFileName) throws IOException;
+    public void load(File argFileName) throws IOException;
 }

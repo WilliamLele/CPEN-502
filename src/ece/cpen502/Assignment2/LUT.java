@@ -1,9 +1,9 @@
 package ece.cpen502.Assignment2;
 
 import ece.cpen502.Interface.LUTInterface;
+import robocode.RobocodeFileOutputStream;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.util.Random;
 
 public class LUT implements LUTInterface {
@@ -110,8 +110,8 @@ public class LUT implements LUTInterface {
 
     }
 
-
-    public void load(String argFileName) throws IOException {
+    @Override
+    public void load(File argFileName) throws IOException {
 
     }
 
