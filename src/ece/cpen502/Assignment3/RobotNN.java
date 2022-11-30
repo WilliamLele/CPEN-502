@@ -6,6 +6,9 @@ import ece.cpen502.Assignment3.ReplayMemory.Experience;
 import ece.cpen502.Assignment3.ReplayMemory.ReplayMemory;
 import robocode.*;
 
+import java.util.LinkedList;
+import java.util.List;
+import java.util.ListIterator;
 import java.util.Random;
 
 /**
@@ -26,6 +29,9 @@ public class RobotNN extends AdvancedRobot {
     public static int winRounds = 0;
     public static int roundsToCount = 100;
     public static double totalRewardsPerCount = 0;
+    public static int totalWinRounds = 0;
+    public static List<Double> winRateList = new LinkedList<>();
+    public static List<Double> totalRewardsPerCountList = new LinkedList<>();
 
     // Initialize the current and previous state
     private State currentState = new State();
@@ -39,10 +45,10 @@ public class RobotNN extends AdvancedRobot {
 
     private double currentReward;
 
-    private double gamma = 0.9;
-    private double alpha = 0.9;
+    private double gamma = 0.5;
+    private double alpha = 0.5;
     private double epsilon_initial = 0.9;
-    private double epsilon = 0.0;
+    private double epsilon = 0.9;
 
     public static boolean immediateReward = true;
     public static boolean onPolicy = false;
@@ -68,8 +74,7 @@ public class RobotNN extends AdvancedRobot {
          * Therefore, only load the LUT file at the start of battle, other than start of each round
          */
 
-        ++totalRounds;
-        ++countRounds;
+        System.out.println("++++++++"+totalRounds+"++++++++"+countRounds);
         if(decayEpsilon && epsilon > 0){
             if(totalRounds <= targetNumRound){
                 epsilon = epsilon_initial * (1 - totalRounds * 1.0 / targetNumRound);
@@ -182,7 +187,7 @@ public class RobotNN extends AdvancedRobot {
         }
     }
 
-    private double[] scaleVector(double[] x) {
+    public double[] scaleVector(double[] x) {
         double lowerBound = nn.getMinQ();
         double upperBound = nn.getMaxQ();
         for(int i=0; i<x.length; ++i){
@@ -195,11 +200,12 @@ public class RobotNN extends AdvancedRobot {
         return x;
     }
 
-    private double[] oneHotEncodingFor(double[] x) {
+    public double[] oneHotEncodingFor(double[] x) {
         double[] xONeHotEncoded = new double[inputNum];
         int offset = 0;
         for(int i=0; i<x.length; ++i){
-            xONeHotEncoded[i+offset] = 1;
+            int pos = (int)x[i];
+            xONeHotEncoded[pos+offset] = 1;
             offset += inputDim[i];
         }
         return xONeHotEncoded;
@@ -323,13 +329,6 @@ public class RobotNN extends AdvancedRobot {
             replayMemory.add(new Experience(previousState, previousAction, currentReward, currentState));
             replayExperience();
         }
-        // statistics
-        if(countRounds == roundsToCount){
-            System.out.println(totalRounds/roundsToCount + " win rate: " + (float)winRounds/roundsToCount + " per "+roundsToCount + ", total rewards: "+ totalRewardsPerCount);
-            countRounds = 0;
-            winRounds = 0;
-            totalRewardsPerCount = 0;
-        }
     }
 
     @Override
@@ -366,13 +365,6 @@ public class RobotNN extends AdvancedRobot {
             replayMemory.add(new Experience(previousState, previousAction, currentReward, currentState));
             replayExperience();
         }
-        // statistics
-        if(countRounds == roundsToCount){
-            System.out.println(totalRounds/roundsToCount + " win rate: " + (float)winRounds/roundsToCount + " per "+roundsToCount + ", total rewards: "+ totalRewardsPerCount);
-            countRounds = 0;
-            winRounds = 0;
-            totalRewardsPerCount = 0;
-        }
     }
 
     @Override
@@ -387,5 +379,39 @@ public class RobotNN extends AdvancedRobot {
         if(immediateReward){
             currentReward = -terminalReward/4;
         }
+    }
+
+    @Override
+    public void onRoundEnded(RoundEndedEvent event) {
+//        lut.print();
+        // statistics
+        ++totalRounds;
+        ++countRounds;
+        if(countRounds == roundsToCount){
+            System.out.println(totalRounds+ "-->win rate: " + winRounds*1.0/roundsToCount + " per "+roundsToCount + ", total rewards: "+ totalRewardsPerCount);
+            winRateList.add(winRounds*1.0/roundsToCount);
+            totalRewardsPerCountList.add(totalRewardsPerCount);
+            countRounds = 0;
+            winRounds = 0;
+            totalRewardsPerCount = 0;
+        }
+    }
+
+    @Override
+    public void onBattleEnded(BattleEndedEvent event) {
+        System.out.println("total win rounds: " + totalWinRounds);
+        System.out.println("************************************");
+
+        ListIterator<Double> it = winRateList.listIterator();
+        while (it.hasNext()) {
+            System.out.print(it.next() + " ");
+
+        }
+        System.out.print("\n");
+        it = totalRewardsPerCountList.listIterator();
+        while (it.hasNext()) {
+            System.out.print(it.next() + " ");
+        }
+        System.out.print("\n");
     }
 }
