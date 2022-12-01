@@ -87,6 +87,9 @@ public class RobotNN extends AdvancedRobot {
             log.stream.println("++++parameters++++");
             log.stream.println("alpha="+alpha+"\ngamma="+gamma+"\nepsilon="+epsilon+"\nimmediate_reward="+immediateReward+
                     "\non_policy="+onPolicy+"\ndecay_epsilon="+decayEpsilon+"\nrounds_per_count="+roundsToCount);
+            log.stream.println("++++nn parameters++++");
+            log.stream.println("num_inputs="+nn.getNumInputs()+"\nnum_hidden_neurons="+nn.getNumHidden()+
+                    "\nrho="+nn.getRho()+"\nalpha="+nn.getAlpha()+"\nmin_q="+nn.getMinQ()+"\nmax_q="+nn.getMaxQ());
             log.stream.println("++++results++++");
             log.stream.println("total_rounds, wins_per_count, total_rewards_per_count, up, down, left, right, fire");
             log.stream.flush();
