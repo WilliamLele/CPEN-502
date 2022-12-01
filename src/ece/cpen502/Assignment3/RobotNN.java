@@ -4,12 +4,12 @@ import ece.cpen502.Assignment1.NeuralNet;
 import ece.cpen502.Assignment2.State;
 import ece.cpen502.Assignment3.ReplayMemory.Experience;
 import ece.cpen502.Assignment3.ReplayMemory.ReplayMemory;
+import ece.cpen502.utils.LogFile;
 import robocode.*;
 
-import java.util.LinkedList;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Random;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 /**
  * @Description:
@@ -66,6 +66,11 @@ public class RobotNN extends AdvancedRobot {
 
     public static NeuralNet nn = new NeuralNet(inputNum, 10, 0.01, 0, -1, 1, true);
 
+    static boolean startBattle = true;
+
+    static LogFile log = null;
+    int[] actionCount = new int[5];
+
     public void run(){
 
         /**
@@ -73,6 +78,20 @@ public class RobotNN extends AdvancedRobot {
          * run() will be called at start of each round
          * Therefore, only load the LUT file at the start of battle, other than start of each round
          */
+
+        if(startBattle){
+            if(log == null){
+                String fileInfo = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss").format(new Date());
+                log = new LogFile(getDataFile(this.getClass().getSimpleName()+"-"+fileInfo+".log"));
+            }
+            log.stream.println("++++parameters++++");
+            log.stream.println("alpha="+alpha+"\ngamma="+gamma+"\nepsilon="+epsilon+"\nimmediate_reward="+immediateReward+
+                    "\non_policy="+onPolicy+"\ndecay_epsilon="+decayEpsilon+"\nrounds_per_count="+roundsToCount);
+            log.stream.println("++++results++++");
+            log.stream.println("total_rounds, wins_per_count, total_rewards_per_count, up, down, left, right, fire");
+            log.stream.flush();
+        }
+        startBattle = false;
 
         System.out.println("++++++++"+totalRounds+"++++++++"+countRounds);
         if(decayEpsilon && epsilon > 0){
@@ -112,28 +131,33 @@ public class RobotNN extends AdvancedRobot {
                     }
                     switch (currentAction){
                         case up:{
+                            ++actionCount[0];
                             setAhead(100);
                             execute();
                             break;
                         }
                         case down:{
+                            ++actionCount[1];
                             setBack(100);
                             execute();
                             break;
                         }
                         case left:{
+                            ++actionCount[2];
                             setTurnLeft(90);
                             //setAhead(100);
                             execute();
                             break;
                         }
                         case right:{
+                            ++actionCount[3];
                             setTurnRight(90);
                             //setAhead(100);
                             execute();
                             break;
                         }
                         case fire:{
+                            ++actionCount[4];
                             turnGunRight(getHeading() - getGunHeading() + enemyBearing);
                             fire(3);
                             execute();
@@ -389,29 +413,35 @@ public class RobotNN extends AdvancedRobot {
         ++countRounds;
         if(countRounds == roundsToCount){
             System.out.println(totalRounds+ "-->win rate: " + winRounds*1.0/roundsToCount + " per "+roundsToCount + ", total rewards: "+ totalRewardsPerCount);
+            log.stream.printf("%4d, %2d, %2.3f, %2d, %2d, %2d, %2d, %2d\n",
+                    totalRounds, winRounds, totalRewardsPerCount, actionCount[0], actionCount[1], actionCount[2], actionCount[3], actionCount[4]);
+            log.stream.flush();
+
             winRateList.add(winRounds*1.0/roundsToCount);
             totalRewardsPerCountList.add(totalRewardsPerCount);
             countRounds = 0;
             winRounds = 0;
             totalRewardsPerCount = 0;
+            Arrays.fill(actionCount, 0);
         }
     }
 
     @Override
     public void onBattleEnded(BattleEndedEvent event) {
-        System.out.println("total win rounds: " + totalWinRounds);
-        System.out.println("************************************");
+        log.stream.println("++++statistics++++");
 
         ListIterator<Double> it = winRateList.listIterator();
         while (it.hasNext()) {
-            System.out.print(it.next() + " ");
+            log.stream.print(it.next() + " ");
 
         }
-        System.out.print("\n");
+        log.stream.print("\n");
         it = totalRewardsPerCountList.listIterator();
         while (it.hasNext()) {
-            System.out.print(it.next() + " ");
+            log.stream.print(it.next() + " ");
         }
-        System.out.print("\n");
+        log.stream.print("\n");
+        log.stream.flush();
+        log.stream.close();
     }
 }
