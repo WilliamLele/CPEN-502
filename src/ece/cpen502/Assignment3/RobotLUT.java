@@ -1,9 +1,11 @@
 package ece.cpen502.Assignment3;
 
 import ece.cpen502.Assignment2.State;
+import ece.cpen502.utils.LogFile;
 import robocode.*;
 
-import java.util.Random;
+import java.text.SimpleDateFormat;
+import java.util.*;
 import java.io.*;
 
 public class RobotLUT extends AdvancedRobot {
@@ -19,6 +21,9 @@ public class RobotLUT extends AdvancedRobot {
     public static int winRounds = 0;
     public static int roundsToCount = 100;
     public static double totalRewardsPerCount = 0;
+    public static List<Double> winRateList = new LinkedList<>();
+    public static List<Double> totalRewardsPerCountList = new LinkedList<>();
+
 
     // Initialize the current and previous state
     private State currentState = new State();
@@ -33,7 +38,7 @@ public class RobotLUT extends AdvancedRobot {
     private double currentReward;
 
     private double gamma = 0.9;
-    private double alpha = 0.9;
+    private double alpha = 0.1;
     private double epsilon_initial = 0.9;
     private double epsilon = 0.0;
 
@@ -49,6 +54,9 @@ public class RobotLUT extends AdvancedRobot {
 
     static boolean startBattle = true;
 
+    static LogFile log = null;
+    int[] actionCount = new int[5];
+
     public void run(){
 
         /**
@@ -63,12 +71,20 @@ public class RobotLUT extends AdvancedRobot {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+            if(log == null){
+                String fileInfo = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss").format(new Date());
+                log = new LogFile(getDataFile(this.getClass().getSimpleName()+"-"+fileInfo+".log"));
+            }
+            log.stream.println("++++parameters++++");
+            log.stream.println("alpha="+alpha+"\ngamma="+gamma+"\nepsilon="+epsilon+"\nimmediate_reward="+immediateReward+
+                    "\non_policy="+onPolicy+"\ndecay_epsilon="+decayEpsilon+"\nrounds_per_count="+roundsToCount);
+            log.stream.println("++++results++++");
+            log.stream.println("total_rounds, wins_per_count, total_rewards_per_count, up, down, left, right, fire");
+            log.stream.flush();
         }
         lut.save(getDataFile("lut.txt"));
         startBattle = false;
 
-        ++totalRounds;
-        ++countRounds;
         if(decayEpsilon && epsilon > 0){
             if(totalRounds <= targetNumRound){
                 epsilon = epsilon_initial * (1 - totalRounds * 1.0 / targetNumRound);
@@ -83,7 +99,10 @@ public class RobotLUT extends AdvancedRobot {
             }
         }
 
+        setAdjustGunForRobotTurn(true);
         setAdjustRadarForGunTurn(true);
+        setAdjustRadarForRobotTurn(true);
+
         while(true){
             switch (operationMode){
                 case SCAN:{
@@ -106,28 +125,33 @@ public class RobotLUT extends AdvancedRobot {
                     }
                     switch (currentAction){
                         case up:{
+                            ++actionCount[0];
                             setAhead(100);
                             execute();
                             break;
                         }
                         case down:{
+                            ++actionCount[1];
                             setBack(100);
                             execute();
                             break;
                         }
                         case left:{
+                            ++actionCount[2];
                             setTurnLeft(90);
                             //setAhead(100);
                             execute();
                             break;
                         }
                         case right:{
+                            ++actionCount[3];
                             setTurnRight(90);
                             //setAhead(100);
                             execute();
                             break;
                         }
                         case fire:{
+                            ++actionCount[4];
                             turnGunRight(getHeading() - getGunHeading() + enemyBearing);
                             fire(3);
                             execute();
@@ -262,13 +286,6 @@ public class RobotLUT extends AdvancedRobot {
                 previousAction.ordinal()
         };
         lut.train(x, computeQ(previousState, currentState, currentReward));
-        // statistics
-        if(countRounds == roundsToCount){
-            System.out.println(totalRounds/roundsToCount + " win rate: " + (float)winRounds/roundsToCount + " per "+roundsToCount + ", total rewards: "+ totalRewardsPerCount);
-            countRounds = 0;
-            winRounds = 0;
-            totalRewardsPerCount = 0;
-        }
     }
 
     @Override
@@ -299,14 +316,6 @@ public class RobotLUT extends AdvancedRobot {
                 previousAction.ordinal()
         };
         lut.train(x, computeQ(previousState, currentState, currentReward));
-
-        // statistics
-        if(countRounds == roundsToCount){
-            System.out.println(totalRounds/roundsToCount + " win rate: " + (float)winRounds/roundsToCount + " per "+roundsToCount + ", total rewards: "+ totalRewardsPerCount);
-            countRounds = 0;
-            winRounds = 0;
-            totalRewardsPerCount = 0;
-        }
     }
 
     @Override
@@ -321,5 +330,45 @@ public class RobotLUT extends AdvancedRobot {
         if(immediateReward){
             currentReward = -terminalReward/4;
         }
+    }
+
+    @Override
+    public void onRoundEnded(RoundEndedEvent event) {
+        // statistics
+        ++totalRounds;
+        ++countRounds;
+        if(countRounds == roundsToCount){
+            System.out.println(totalRounds+ "-->win rate: " + winRounds*1.0/roundsToCount + " per "+roundsToCount + ", total rewards: "+ totalRewardsPerCount);
+            log.stream.printf("%4d, %2d, %2.3f, %2d, %2d, %2d, %2d, %2d\n",
+                    totalRounds, winRounds, totalRewardsPerCount, actionCount[0], actionCount[1], actionCount[2], actionCount[3], actionCount[4]);
+            log.stream.flush();
+
+            winRateList.add(winRounds*1.0/roundsToCount);
+            totalRewardsPerCountList.add(totalRewardsPerCount);
+            countRounds = 0;
+            winRounds = 0;
+            totalRewardsPerCount = 0;
+            Arrays.fill(actionCount, 0);
+        }
+    }
+
+    @Override
+    public void onBattleEnded(BattleEndedEvent event) {
+        log.stream.println("++++statistics++++");
+
+        ListIterator<Double> it = winRateList.listIterator();
+        while (it.hasNext()) {
+            log.stream.print(it.next() + " ");
+
+        }
+        log.stream.print("\n");
+        it = totalRewardsPerCountList.listIterator();
+        while (it.hasNext()) {
+            log.stream.print(it.next() + " ");
+        }
+        log.stream.print("\n");
+        log.stream.flush();
+        log.stream.close();
+
     }
 }

@@ -3,6 +3,9 @@ import ece.cpen502.Assignment3.RobotNN;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 /**
  * @Description:
  * @author: Hongjing
@@ -33,5 +36,11 @@ public class RobotNNTest {
             System.out.print(e + " ");
         }
         System.out.println();
+    }
+
+    @Test
+    public void others(){
+        String fileName = new SimpleDateFormat("yyyy-MM-dd-HH:mm:ss").format(new Date())+".log";
+        System.out.println(fileName);
     }
 }
