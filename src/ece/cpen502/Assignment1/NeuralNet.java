@@ -1,9 +1,11 @@
 package ece.cpen502.Assignment1;
 
 import ece.cpen502.Interface.NeuralNetInterface;
+import robocode.RobocodeFileOutputStream;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.Random;
 

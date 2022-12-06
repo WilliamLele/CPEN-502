@@ -6,14 +6,13 @@ import robocode.*;
 
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.io.*;
 
 public class RobotLUT extends AdvancedRobot {
 
     public enum Operation {SCAN, PERFORM_ACTION};
 
     public static double terminalReward = 1.0;
-    public static int targetNumRound = 6000;
+    public static int targetNumRound = 8000;
 
     // Total rounds, win rounds and win percentage
     public static int totalRounds = 0;
@@ -23,7 +22,7 @@ public class RobotLUT extends AdvancedRobot {
     public static double totalRewardsPerCount = 0;
     public static List<Double> winRateList = new LinkedList<>();
     public static List<Double> totalRewardsPerCountList = new LinkedList<>();
-
+    public static double highestWinRate = 0;
 
     // Initialize the current and previous state
     private State currentState = new State();
@@ -37,14 +36,14 @@ public class RobotLUT extends AdvancedRobot {
 
     private double currentReward;
 
-    private double gamma = 0.9;
-    private double alpha = 0.1;
-    private double epsilon_initial = 0.9;
-    private double epsilon = 0.0;
+    private double gamma = 1;
+    private double alpha = 0;
+    private double epsilon_initial = 1;
+    private double epsilon = 1;
 
     public static boolean immediateReward = true;
     public static boolean onPolicy = false;
-    public static boolean decayEpsilon = false;
+    public static boolean decayEpsilon = true;
 
     public static LUT_new lut = new LUT_new(
             State.XPOS_NUM, State.YPOS_NUM,
@@ -56,6 +55,8 @@ public class RobotLUT extends AdvancedRobot {
 
     static LogFile log = null;
     int[] actionCount = new int[5];
+    static String fileInfo = null;
+    static String enemyName = null;
 
     public void run(){
 
@@ -66,13 +67,8 @@ public class RobotLUT extends AdvancedRobot {
          */
 
         if(startBattle){
-            try{
-                lut.load(getDataFile("lut.txt"));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
             if(log == null){
-                String fileInfo = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss").format(new Date());
+                fileInfo = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss").format(new Date());
                 log = new LogFile(getDataFile(this.getClass().getSimpleName()+"-"+fileInfo+".log"));
             }
             log.stream.println("++++parameters++++");
@@ -82,7 +78,6 @@ public class RobotLUT extends AdvancedRobot {
             log.stream.println("total_rounds, wins_per_count, total_rewards_per_count, up, down, left, right, fire");
             log.stream.flush();
         }
-        lut.save(getDataFile("lut.txt"));
         startBattle = false;
 
         if(decayEpsilon && epsilon > 0){
@@ -107,7 +102,8 @@ public class RobotLUT extends AdvancedRobot {
             switch (operationMode){
                 case SCAN:{
                     currentReward = 0;
-                    turnRadarLeft(90);
+                    setTurnRadarRight(360);//turnRadarLeft(90);
+                    execute();
                     break;
                 }
                 case PERFORM_ACTION:{
@@ -139,14 +135,14 @@ public class RobotLUT extends AdvancedRobot {
                         case left:{
                             ++actionCount[2];
                             setTurnLeft(90);
-                            //setAhead(100);
+                            setAhead(100); //？
                             execute();
                             break;
                         }
                         case right:{
                             ++actionCount[3];
                             setTurnRight(90);
-                            //setAhead(100);
+                            setAhead(100); //？
                             execute();
                             break;
                         }
@@ -252,6 +248,9 @@ public class RobotLUT extends AdvancedRobot {
 
     @Override
     public void onScannedRobot(ScannedRobotEvent e) {
+        if(enemyName == null){
+            enemyName = e.getName();
+        }
         // capture previous state before updating
         previousState.myX = currentState.myX;
         previousState.myY = currentState.myY;
@@ -338,10 +337,17 @@ public class RobotLUT extends AdvancedRobot {
         ++totalRounds;
         ++countRounds;
         if(countRounds == roundsToCount){
-            System.out.println(totalRounds+ "-->win rate: " + winRounds*1.0/roundsToCount + " per "+roundsToCount + ", total rewards: "+ totalRewardsPerCount);
+            double currentWinRate = winRounds*1.0/roundsToCount;
+            System.out.println(totalRounds+ "-->win rate: " + currentWinRate + " per "+roundsToCount + ", total rewards: "+ totalRewardsPerCount);
             log.stream.printf("%4d, %2d, %2.3f, %2d, %2d, %2d, %2d, %2d\n",
                     totalRounds, winRounds, totalRewardsPerCount, actionCount[0], actionCount[1], actionCount[2], actionCount[3], actionCount[4]);
             log.stream.flush();
+
+            // save the lut that has the highest win rate
+            if(currentWinRate > highestWinRate){
+                highestWinRate = currentWinRate;
+                lut.save(getDataFile(this.getClass().getSimpleName()+"-"+fileInfo+".txt"));
+            }
 
             winRateList.add(winRounds*1.0/roundsToCount);
             totalRewardsPerCountList.add(totalRewardsPerCount);
@@ -355,20 +361,27 @@ public class RobotLUT extends AdvancedRobot {
     @Override
     public void onBattleEnded(BattleEndedEvent event) {
         log.stream.println("++++statistics++++");
-
+        log.stream.println("highest_win_rate="+highestWinRate);
+        log.stream.println("enemy_name="+enemyName);
         ListIterator<Double> it = winRateList.listIterator();
         while (it.hasNext()) {
             log.stream.print(it.next() + " ");
+            log.stream.flush();
 
         }
         log.stream.print("\n");
+        log.stream.flush();
         it = totalRewardsPerCountList.listIterator();
         while (it.hasNext()) {
             log.stream.print(it.next() + " ");
+            log.stream.flush();
         }
         log.stream.print("\n");
         log.stream.flush();
         log.stream.close();
 
+        if(highestWinRate == 0){
+            lut.save(getDataFile(this.getClass().getSimpleName()+"-"+fileInfo+".txt"));
+        }
     }
 }

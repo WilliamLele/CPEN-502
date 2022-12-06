@@ -21,7 +21,7 @@ public class RobotNN extends AdvancedRobot {
     public enum Operation {SCAN, PERFORM_ACTION};
 
     public static double terminalReward = 1.0;
-    public static int targetNumRound = 6000;
+    public static int targetNumRound = 9000;
 
     // Total rounds, win rounds and win percentage
     public static int totalRounds = 0;
@@ -45,26 +45,36 @@ public class RobotNN extends AdvancedRobot {
 
     private double currentReward;
 
-    private double gamma = 0.5;
-    private double alpha = 0.5;
+    private double gamma = 1;
+    private double alpha = 0.1;
     private double epsilon_initial = 0.9;
     private double epsilon = 0.9;
 
     public static boolean immediateReward = true;
     public static boolean onPolicy = false;
-    public static boolean decayEpsilon = false;
-    public static boolean replayMemoryMode = true;
+    public static boolean decayEpsilon = true;
+    public static boolean replayMemoryMode = false;
+    public static boolean monitorNNLearningMode = true;
 
 
     public static int memorySize = 10;
-    public final int MAX_SAMPLE_SIZE = 5;
+    public final int MAX_SAMPLE_SIZE = 0;
     public static ReplayMemory<Experience> replayMemory = new ReplayMemory<>(memorySize);
 
     public static int[] inputDim = {State.XPOS_NUM, State.YPOS_NUM, State.ENERGY_NUM, State.DISTANCE_NUM, State.ENERGY_NUM, State.ACTION_NUM};
     public static int inputNum = State.XPOS_NUM + State.YPOS_NUM + State.ENERGY_NUM + State.DISTANCE_NUM + State.ENERGY_NUM + State.ACTION_NUM;;
     public final double DELTA = 0.000005;
 
-    public static NeuralNet nn = new NeuralNet(inputNum, 10, 0.01, 0, -1, 1, true);
+    public static NeuralNet nn = new NeuralNet(
+            inputNum, 18, 0.01, 0.01, -1, 1, true
+    );
+
+    // monitor nn learning
+    public static final double[] nnLearningMonitorInput = {
+            0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0
+    };
+    public static final List<Double> nnLearningMonitorList = new ArrayList<>();
+    public static double previousOutput = 0;
 
     static boolean startBattle = true;
 
@@ -84,15 +94,18 @@ public class RobotNN extends AdvancedRobot {
                 String fileInfo = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss").format(new Date());
                 log = new LogFile(getDataFile(this.getClass().getSimpleName()+"-"+fileInfo+".log"));
             }
-            log.stream.println("++++parameters++++");
+            log.stream.println("++++robot parameters++++");
             log.stream.println("alpha="+alpha+"\ngamma="+gamma+"\nepsilon="+epsilon+"\nimmediate_reward="+immediateReward+
-                    "\non_policy="+onPolicy+"\ndecay_epsilon="+decayEpsilon+"\nrounds_per_count="+roundsToCount);
+                    "\non_policy="+onPolicy+"\ndecay_epsilon="+decayEpsilon+"\nrounds_per_count="+roundsToCount+
+                    "\nreplay_memory_mode="+replayMemoryMode + "\nmonitor_nn_learning="+monitorNNLearningMode);
+            log.stream.println("replay_size="+Math.min(memorySize, MAX_SAMPLE_SIZE));
             log.stream.println("++++nn parameters++++");
             log.stream.println("num_inputs="+nn.getNumInputs()+"\nnum_hidden_neurons="+nn.getNumHidden()+
                     "\nrho="+nn.getRho()+"\nalpha="+nn.getAlpha()+"\nmin_q="+nn.getMinQ()+"\nmax_q="+nn.getMaxQ());
             log.stream.println("++++results++++");
             log.stream.println("total_rounds, wins_per_count, total_rewards_per_count, up, down, left, right, fire");
             log.stream.flush();
+            nn.initializeWeights();
         }
         startBattle = false;
 
@@ -410,10 +423,18 @@ public class RobotNN extends AdvancedRobot {
 
     @Override
     public void onRoundEnded(RoundEndedEvent event) {
-//        lut.print();
         // statistics
         ++totalRounds;
         ++countRounds;
+        if(monitorNNLearningMode){
+            double currentOutput = nn.outputFor(nnLearningMonitorInput);
+            if(nnLearningMonitorList.isEmpty()){
+               nnLearningMonitorList.add(-1.0);
+            } else{
+                nnLearningMonitorList.add(Math.abs(currentOutput - previousOutput));
+            }
+            previousOutput = currentOutput;
+        }
         if(countRounds == roundsToCount){
             System.out.println(totalRounds+ "-->win rate: " + winRounds*1.0/roundsToCount + " per "+roundsToCount + ", total rewards: "+ totalRewardsPerCount);
             log.stream.printf("%4d, %2d, %2.3f, %2d, %2d, %2d, %2d, %2d\n",
@@ -432,7 +453,6 @@ public class RobotNN extends AdvancedRobot {
     @Override
     public void onBattleEnded(BattleEndedEvent event) {
         log.stream.println("++++statistics++++");
-
         ListIterator<Double> it = winRateList.listIterator();
         while (it.hasNext()) {
             log.stream.print(it.next() + " ");
@@ -445,6 +465,16 @@ public class RobotNN extends AdvancedRobot {
         }
         log.stream.print("\n");
         log.stream.flush();
+
+        if(monitorNNLearningMode){
+            log.stream.println("++++nn learning monitor++++");
+            it = winRateList.listIterator();
+            while(it.hasNext()){
+                log.stream.print(it.next() + " ");
+            }
+            log.stream.print("\n");
+            log.stream.flush();
+        }
         log.stream.close();
     }
 }
